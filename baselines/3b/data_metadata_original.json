@@ -1,0 +1,74 @@
+{
+  "vocab_size": 32768,
+  "dtype": "uint16",
+  "bos_token_id": 32759,
+  "document_delimiter": "<|bos|>",
+  "format_version": 2,
+  "tokenizer": {
+    "family": "nanochat",
+    "vocab_size": 32768,
+    "source_kind": "pinned_hf_or_cached",
+    "source_repo": "crellis/d18-9tpp-hf-sft",
+    "source_revision": "79e88e310d774ee11a1dd3c154a639f0cc21bcb2",
+    "source_path": null,
+    "local_file": "tokenizer.json",
+    "sha256": "78025606dd6a505cd74f4b187866bf5540ee83239131aa2f1ddefdfd2e104272",
+    "training_corpus": "~2B characters of NVIDIA ClimbMix pretraining data"
+  },
+  "packing": {
+    "document_delimiter": "<|bos|>",
+    "split_documents_across_output_files": false,
+    "extra_next_token_label": true,
+    "note": "Document tails are dropped at output-file boundaries to prevent train/validation leakage."
+  },
+  "stage1_tokens": 2100000000,
+  "decay_tokens": 900000000,
+  "val_tokens": 5000000,
+  "curriculum": {
+    "stage1": "100% Ultra-FineWeb L2 English for first half",
+    "decay_l3_mix": {
+      "Ultra-FineWeb L2": 0.5,
+      "Ultra-FineWeb-L3 English QA Synthetic": 0.25,
+      "Ultra-FineWeb-L3 English Multi-Style Synthetic": 0.25
+    },
+    "decay_control": "100% Ultra-FineWeb L2 English",
+    "stable_l3_mix": {
+      "Ultra-FineWeb L2": 0.75,
+      "Ultra-FineWeb-L3 English QA Synthetic": 0.125,
+      "Ultra-FineWeb-L3 English Multi-Style Synthetic": 0.125
+    }
+  },
+  "datasets": {
+    "l2": {
+      "dataset": "openbmb/Ultra-FineWeb",
+      "revision": "02c85641e3d19a854be2e09139c25adaa9518063",
+      "split": "en",
+      "text_field": "content"
+    },
+    "l3": {
+      "dataset": "openbmb/Ultra-FineWeb-L3",
+      "revision": "bc3b1ba986fcaef6871b9790a413b16267c2de0f",
+      "qa_config": "Ultra-FineWeb-L3-en-QA-Synthetic",
+      "style_config": "Ultra-FineWeb-L3-en-Multi-Style-Synthetic",
+      "text_field": "content"
+    }
+  },
+  "files": {
+    "val_l2.bin": 5000001,
+    "stage1_l2.bin": 5400000001,
+    "decay_l2.bin": 1799946241,
+    "decay_l3_qa.bin": 750018561,
+    "decay_l3_style.bin": 750018561
+  },
+  "seed": 1337,
+  "preparation": {
+    "reused_streams_from": "/media/nvme/spindro/miniple_6b/data/ultrafineweb_6b_halfmix",
+    "note": "L2 training and validation are document-disjoint; the mixed L2 slice begins after the first 3B training tokens."
+  },
+  "mix_start_tokens": 1500000000,
+  "derivation": {
+    "source_dir": "/media/nvme/spindro/miniple_6b/data/ultrafineweb_6b_two_phase",
+    "source_metadata_sha256": "1da221819307cd36d92e67752d616a07926594af4c62d3a8809336b6669d1b79",
+    "note": "Reuse document-disjoint source files; consume 1.4999552B L2 prefix then disjoint mixed sources. No source wraps."
+  }
+}

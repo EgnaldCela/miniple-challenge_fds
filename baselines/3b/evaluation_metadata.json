@@ -1,0 +1,71 @@
+{
+  "created_utc": "2026-10-23T06:32:02.716510+00:00",
+  "checkpoint": "runs/3b_v2_muon_sampled_20261022_gpu0/final_l3_mix.pt",
+  "checkpoint_size_bytes": 1407273735,
+  "gpu_uuid": "GPU-cfbe689d-b422-47e1-f640-5940af92cb57",
+  "cuda_allocator_memory_fraction": 0.2,
+  "batch_size": 8,
+  "num_fewshot": 0,
+  "limit": null,
+  "source_sha256": {
+    "scripts/evaluate.py": "15d2f9f774a608d94e8d0c7970f5519623ad6210aae977084af370c965fbdcd4",
+    "model.py": "e2218ba9eabc72a205e007814bde4f3d638874196e9d171b8078e87755e5f75c",
+    "attention_sinks.py": "53fbc80c7a58d4a5777211abd736ed64be8ab0826abe17e93db44fa440c9d95d",
+    "tokenizer_utils.py": "57f4c1e2d031ccca377c55e5bc9fdfeef4fedea533ef64fb511b612044110531"
+  },
+  "checkpoint_sha256": "3b9c1ed9daff59f26beb115bb4631aa0ec802171832a6d44493609d40d766e4a",
+  "tokenizer_sha256": "78025606dd6a505cd74f4b187866bf5540ee83239131aa2f1ddefdfd2e104272",
+  "harness_commit": "d6de81643928d653435c431bae19945d41d32520",
+  "versions": {
+    "torch": "2.8.0+cu128",
+    "lm_eval": "0.4.14.dev0",
+    "datasets": "5.0.1",
+    "numpy": "2.5.3",
+    "tokenizers": "0.23.2",
+    "flash-attn": "2.8.3.post1"
+  },
+  "model_config": {
+    "architecture_version": 2,
+    "vocab_size": 32768,
+    "max_seq_len": 2048,
+    "n_layers": 18,
+    "d_model": 640,
+    "d_ff": 3072,
+    "n_heads": 8,
+    "n_kv_heads": 2,
+    "head_dim": 64,
+    "local_window": 256,
+    "attention_pattern": "GGLLLGLLLGLLLGLLLG",
+    "global_nope": true,
+    "ple_dim": 64,
+    "dropout": 0.0,
+    "rope_base": 10000.0,
+    "rms_eps": 1e-06,
+    "attn_backend": "flash",
+    "loss_backend": "liger",
+    "ce_chunk_size": 2048,
+    "gradient_checkpointing": false
+  },
+  "training_tokens": 2999910400,
+  "final_validation": {
+    "time_unix": 1792725764.9947703,
+    "event": "validation",
+    "step": 18310,
+    "tokens": 2999910400,
+    "loss": 3.0081611946225166,
+    "perplexity": 20.250129622081722,
+    "sequences": 128,
+    "full_vocabulary": true
+  },
+  "training_duration_seconds": 39635.22604703903,
+  "completed_utc": "2026-10-23T06:42:16.753070+00:00",
+  "elapsed_seconds": 614.0365600585938,
+  "truncated_requests": 0,
+  "examples": {
+    "hellaswag": 10042,
+    "piqa": 1838,
+    "arc_easy": 2376,
+    "arc_challenge": 1172
+  },
+  "exit_code": 0
+}

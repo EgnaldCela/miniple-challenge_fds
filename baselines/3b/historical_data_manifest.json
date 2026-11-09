@@ -1,0 +1,30 @@
+{
+  "stage1_l2.bin": {
+    "bytes": 2999910402,
+    "sha256": "075d51afd883fe325bf301618eabd5125718117c73e894d8b4a72a8ab7d11f7b"
+  },
+  "decay_l2.bin": {
+    "bytes": 1799946242,
+    "sha256": "cec22f89a9ee9b57d7cf974534a64b832595642236b10eb0ba83ffec8a26fb40"
+  },
+  "decay_l3_qa.bin": {
+    "bytes": 599982082,
+    "sha256": "54d3696d48b3f4f2edf9f782516eba1972fe088ee94ac745d42a6898c730cfe2"
+  },
+  "decay_l3_style.bin": {
+    "bytes": 599982082,
+    "sha256": "68f03355c5721fd8350e2f75292362025f1cd47f4005408a576f519a8ce416ad"
+  },
+  "val_l2.bin": {
+    "bytes": 10000002,
+    "sha256": "cd9b0e5cbf20e45922905d249a1dfe397d66abe886aa622d2632eaeb604e81a8"
+  },
+  "tokenizer.json": {
+    "bytes": 3865175,
+    "sha256": "78025606dd6a505cd74f4b187866bf5540ee83239131aa2f1ddefdfd2e104272"
+  },
+  "metadata.json": {
+    "bytes": 3109,
+    "sha256": "aa671d13a7b681d9ac52e3796643c174a27ec21e797b1ceb5aa39761814436af"
+  }
+}

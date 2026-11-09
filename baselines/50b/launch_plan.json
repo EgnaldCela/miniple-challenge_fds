@@ -1,0 +1,18 @@
+{
+  "budget_tokens_requested": 50000000000,
+  "budget_tokens_scheduled": 49999872000,
+  "gpu": 1,
+  "warmup_tokens": 166666667,
+  "mix_start_tokens_requested": 25000000000,
+  "cooldown_start_tokens_requested": 35000000000,
+  "decay_tokens_requested": 15000000000,
+  "muon_lr": 0.0008,
+  "adamw_lr": 0.0006,
+  "micro_batch": 20,
+  "grad_accum": 4,
+  "seq_len": 2048,
+  "seed": 1337,
+  "data_dir": "/media/ssd/spindro/ultrafineweb_50b_v2_20261022",
+  "validation_reference": "/media/nvme/spindro/miniple_6b/data/ultrafineweb_6b_decay20/val_l2.bin",
+  "data_policy": "Single traversal of pinned source streams; append-only preparation with committed-token guards; no file wrapping"
+}

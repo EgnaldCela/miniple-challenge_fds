@@ -1,0 +1,16 @@
+# Student-generated environments, data, checkpoints, and runs.
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+/data/
+/runs/
+/checkpoints/
+*.pt
+*.bin
+!/baselines/validation/val_l2.bin
+*.tmp
+*.part
+~$*
+# Supplied small baseline figures and JSON records remain versioned.

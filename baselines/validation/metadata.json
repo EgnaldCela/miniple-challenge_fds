@@ -1,0 +1,29 @@
+{
+  "vocab_size": 32768,
+  "dtype": "uint16",
+  "bos_token_id": 32759,
+  "document_delimiter": "<|bos|>",
+  "format_version": 2,
+  "tokenizer": {
+    "family": "nanochat",
+    "vocab_size": 32768,
+    "source_kind": "pinned_hf_or_cached",
+    "source_repo": "crellis/d18-9tpp-hf-sft",
+    "source_revision": "79e88e310d774ee11a1dd3c154a639f0cc21bcb2",
+    "source_path": null,
+    "local_file": "tokenizer.json",
+    "sha256": "78025606dd6a505cd74f4b187866bf5540ee83239131aa2f1ddefdfd2e104272",
+    "training_corpus": "~2B characters of NVIDIA ClimbMix pretraining data"
+  },
+  "packing": {
+    "document_delimiter": "<|bos|>",
+    "split_documents_across_output_files": false,
+    "extra_next_token_label": true,
+    "note": "Document tails are dropped at output-file boundaries to prevent train/validation leakage."
+  },
+  "seed": 1337,
+  "files": {
+    "val_l2.bin": 5000001
+  },
+  "purpose": "Frozen evaluation and tokenizer reference only; reconstruct training data with prepare_data.py."
+}

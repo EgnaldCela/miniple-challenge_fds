@@ -1,0 +1,16 @@
+[
+  {
+    "checkpoint": "3b",
+    "parameters": 146496016,
+    "completed_steps": 18310,
+    "cpu_probe_tokens": 32,
+    "cpu_probe_ce_not_benchmark": 2.996553659439087
+  },
+  {
+    "checkpoint": "50b",
+    "parameters": 146496016,
+    "completed_steps": 305175,
+    "cpu_probe_tokens": 32,
+    "cpu_probe_ce_not_benchmark": 3.000796318054199
+  }
+]

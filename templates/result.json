@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "status": "template_fill_before_submission",
+  "track": null,
+  "run_name": null,
+  "hypothesis": null,
+  "code_revision_or_patch": null,
+  "command": null,
+  "seed": null,
+  "starting_condition": null,
+  "base_checkpoint_sha256": null,
+  "inherited_training_tokens": null,
+  "parameters": {
+    "unique_total_during_training": null,
+    "trainable": null,
+    "active_per_token": null,
+    "auxiliary": null,
+    "deployed": null
+  },
+  "data": {
+    "manifest": null,
+    "tokenizer_sha256": null,
+    "validation_sha256": null,
+    "sources_and_revisions": [],
+    "mixture_by_token_count": null,
+    "nonpadding_token_exposures": null,
+    "replayed_tokens": null,
+    "auxiliary_prediction_events": null,
+    "sft_unmasked_response_tokens": null
+  },
+  "training": {
+    "effective_batch_tokens": null,
+    "context_length": null,
+    "optimizer_and_schedule": null,
+    "precision": null,
+    "eval_grid_tokens": 40960000,
+    "all_attempts_gpu_hours": null
+  },
+  "evaluation": {
+    "final_ce": null,
+    "target_ce": 3.0081611946225166,
+    "target_reached": null,
+    "preceding_evaluation": null,
+    "qualifying_evaluation": null,
+    "actual_evaluation_token_positions": [],
+    "checkpoint_sha256": null,
+    "benchmark_outputs": [],
+    "task_specific_outputs": [],
+    "test_set_status": null
+  },
+  "timing": {
+    "definition": null,
+    "process_to_target_seconds": null,
+    "training_start_to_target_seconds": null,
+    "compile_cache_policy": null,
+    "segments_and_interruptions": [],
+    "preprocessing_seconds": null,
+    "peak_allocated_gib": null,
+    "peak_reserved_gib": null
+  },
+  "environment": {
+    "gpu_model_and_uuid": null,
+    "gpu_power_clock_policy": null,
+    "driver_cuda_pytorch": null,
+    "package_versions_file": null,
+    "cpu_ram_storage": null,
+    "compile_and_thread_settings": null
+  },
+  "correctness_checks": [],
+  "limitations": []
+}

@@ -1,0 +1,89 @@
+# MiniPLE: small language models, measurable improvements
+
+Build and test an improvement to a **146,496,016-parameter language model** on **one NVIDIA RTX 3090 (24 GB)**. Choose one main track, state a hypothesis, run controlled experiments, and explain what the evidence supports. A well-explained negative result is a valid research outcome.
+
+**3B and 50B refer to training tokens, not model parameters.** Both supplied checkpoints have the same 146.5M-parameter architecture. The default command trains a new model from random initialization for approximately 3B tokens. It does not load either supplied checkpoint.
+
+## Source code and optional checkpoints
+
+The package is prepared for the `spindro/miniple-challenge` GitHub repository and release `v1.0`; publication and repository visibility are still pending. The source checkout includes code, documents, historical results, and the **frozen validation file and tokenizer**. The two full training checkpoints are separate release assets. **Scratch training needs neither checkpoint.** Training data is reconstructed locally and is not distributed.
+
+Once the instructor provides access, follow [the download and distribution guide](docs/DISTRIBUTION.md). Download only what your experiment uses:
+
+```bash
+# Reference evaluation: download only the 3B-token checkpoint.
+python3 scripts/download_checkpoints.py --checkpoint 3b
+python3 scripts/verify_artifacts.py --checkpoints 3b
+
+# E/F adaptation: use --checkpoint 50b and verify --checkpoints 50b instead.
+```
+
+The downloader reads its repository and release tag from `distribution.json`. Its default HTTPS path is for public releases; the distribution guide also explains authenticated downloads if the instructor chooses a private repository.
+
+## Choose a track
+
+| Track | Main question | Starting point | Primary result |
+|---|---|---|---|
+| A — Quality at equal tokens | Can you learn a better model from the same token budget? | Random initialization | Lower fixed held-out next-token loss at 2,999,910,400 tokens |
+| B — Token efficiency | Can you reach the baseline quality with fewer tokens? | Random initialization | Fewer tokens to validation loss ≤ 3.0081611946225166 |
+| C — Training speed | Can you reach that quality sooner on one 3090? | Random initialization | Less elapsed training time to the same target |
+| D — Data mixtures | Can better data selection or ordering improve learning? | Random initialization | A declared A, B, or C objective, with the model recipe controlled |
+| E — Instruction tuning | Can you turn the 50B base model into a useful instruction follower? | Supplied 50B checkpoint | Held-out instruction-following quality and retained base capabilities |
+| F — Italian | Can you produce a useful Italian model? | 50B checkpoint for adaptation, or a separately reported 3B scratch run | Italian quality, token efficiency, and English retention |
+
+Architecture, optimizer, and systems ideas include MoEs, n-gram features, learning-rate or optimizer changes, training-speedrun techniques, and multi-token prediction. These are options, not a required checklist. See [the complete track briefs](docs/TRACKS.md).
+
+## Start here
+
+1. Read [setup and commands](docs/SETUP.md), then inspect [the baseline](docs/BASELINE.md).
+2. Read [comparison rules](docs/PROTOCOL.md) before choosing your metric.
+3. Study [how the code works](docs/CODE_GUIDE.md) and the [reading guide](docs/READING.md).
+4. Fill in [your experiment proposal](templates/PROPOSAL.md) and make one small, testable change.
+5. Submit the [report](templates/REPORT.md), raw results, code, and model artifacts described in [deliverables](docs/DELIVERABLES.md).
+
+Agents working in this folder should read [AGENTS.md](AGENTS.md). Course staff should read [INSTRUCTOR.md](docs/INSTRUCTOR.md).
+
+The [classroom presentation](presentation/README.md) includes an editable PowerPoint with speaker notes and a PDF copy.
+
+## First commands
+
+From this folder, on the allocated Linux machine:
+
+```bash
+python3 scripts/check_starter.py
+python3 scripts/verify_artifacts.py --checkpoints none
+bash scripts/install.sh
+GPU_ID=0 OUT_DIR=runs/my_baseline_3b bash scripts/train.sh
+```
+
+The training command first downloads and prepares the training corpus when it is missing, then starts the roughly 11-hour historical workload on a 3090. It is not a smoke test. Follow the course GPU allocation. **Training data is not included:** students reconstruct it using `prepare_data.py`. See [setup](docs/SETUP.md) to prepare it separately without starting training. Run an unchanged control on the rebuilt corpus before attributing improvements to architecture: the historical run used different training slices.
+
+## Supplied reference results
+
+| Reference | Parameters | Predicted training tokens | Fixed L2 validation CE ↓ | Perplexity ↓ |
+|---|---:|---:|---:|---:|
+| 3B | 146,496,016 | 2,999,910,400 | 3.008161 | 20.250130 |
+| 50B | 146,496,016 | 49,999,872,000 | 2.799718 | 16.440013 |
+
+![Original 3B training and validation curves](baselines/3b/losses.png)
+
+The training plot includes sampled-softmax objectives with different candidate counts. Their losses are diagnostic curves; **the common comparison metric is full-vocabulary next-token cross-entropy on the frozen validation set**. Auxiliary MTP or MoE losses must be reported separately.
+
+## Folder contents
+
+```text
+AGENTS.md                 Instructions for coding agents
+docs/                     Track briefs, protocol, setup, background, readings
+templates/                Proposal, report, and machine-readable result template
+model.py, train.py, ...   Editable training implementation
+scripts/                  Install, train, check, evaluate, generate
+distribution.json         Repository and release used by the checkpoint downloader
+tests/                    Small CPU checks for the added loss evaluator
+data/ultrafineweb_3b/      Created locally by prepare_data.py; not distributed
+baselines/3b/             Original results/provenance; optional downloaded checkpoint
+baselines/50b/            Original results/provenance; optional downloaded checkpoint
+baselines/validation/     Frozen validation set and tokenizer, included in Git
+runs/                     Your experiments; create a fresh directory for each run
+```
+
+The default size band is **131,846,415–161,145,617 total parameters** (±10%). Every stored expert and learned lookup entry counts. See the protocol for tied weights, auxiliary heads, and adaptation tracks. Dates, team size, and the available GPU-hour budget are supplied by the instructor; no deadline or allocation is implied by these files.
