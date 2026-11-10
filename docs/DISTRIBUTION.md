@@ -1,6 +1,6 @@
 # Source repository and optional model downloads
 
-The configured distribution target is **`spindro/miniple-challenge`**, with checkpoint assets in GitHub Release **`v1.0`**. Publication and repository visibility are still pending; these instructions describe the prepared distribution layout, not a claim that the repository or release is already accessible. The instructor will provide access when publication is complete.
+The public source repository is [spindro/miniple-challenge](https://github.com/spindro/miniple-challenge), with checkpoint assets in [GitHub Release v1.0](https://github.com/spindro/miniple-challenge/releases/tag/v1.0). Downloads require no GitHub account or invitation.
 
 ## What comes from Git
 
@@ -8,10 +8,10 @@ The source checkout contains editable training code, student documents, agent in
 
 It excludes full model checkpoints, generated training data, and student experiment outputs. **The default scratch-training workflow needs no pretrained checkpoint.** Prepare training data from the pinned sources using [SETUP.md](SETUP.md).
 
-Once the repository is published and you have access:
+Clone the course release and verify the included reference files:
 
 ```bash
-git clone https://github.com/spindro/miniple-challenge.git
+git clone --branch v1.0 https://github.com/spindro/miniple-challenge.git
 cd miniple-challenge
 python3 scripts/check_starter.py
 python3 scripts/verify_artifacts.py --checkpoints none
@@ -30,7 +30,7 @@ A GitHub source archive is also usable: extract it and run commands from its roo
 
 Each checkpoint is about **1.4 GB**; both together are about **2.8 GB**. These are the original **full training checkpoints**, including optimizer/RNG state, rather than converted weights-only files. Their exact byte counts and SHA256 values are recorded in `baselines/manifest.json`. Load only the trusted instructor release or checkpoints you produced yourself, because the full checkpoint format uses pickle support.
 
-For a public release, select one of these workflows:
+Select one of these workflows:
 
 ```bash
 # Only the 3B-token reference:
@@ -72,18 +72,18 @@ python3 scripts/download_checkpoints.py --checkpoint 50b \
 
 Replace `OWNER/REPO` and `TAG` with the instructor-provided values. Changing the download location does not change the expected checkpoint hashes; use a matching source release and manifest. Do not edit a hash to make an unverified download pass.
 
-## If the instructor selects a private repository
+## Private copies of the assignment
 
-You need GitHub access to the repository and its release. The Python downloader uses public HTTPS release URLs; it does not automatically use GitHub CLI authentication or accept embedded credentials. Use an authenticated GitHub CLI download or the release page in an authenticated browser instead.
+The official course repository is public. If you use a private copy, you need GitHub access to that repository and its release. The Python downloader uses public HTTPS release URLs; it does not automatically use GitHub CLI authentication or accept embedded credentials. Use an authenticated GitHub CLI download or the release page in an authenticated browser instead.
 
 For example, after installing GitHub CLI and signing in with `gh auth login`, download only the 50B asset into a fresh staging directory:
 
 ```bash
-gh release download v1.0 --repo spindro/miniple-challenge \
+gh release download v1.0 --repo OWNER/PRIVATE-REPO \
   --pattern miniple-50b.pt --dir checkpoint_download
 ```
 
-Place that file at `baselines/50b/final_l3_mix.pt`, preserving any existing local file until you have checked what it is, then verify:
+Replace `OWNER/PRIVATE-REPO` with the private copy's repository. Place the downloaded file at `baselines/50b/final_l3_mix.pt`, preserving any existing local file until you have checked what it is, then verify:
 
 ```bash
 python3 scripts/verify_artifacts.py --checkpoints 50b
@@ -93,9 +93,9 @@ For the 3B reference, select `miniple-3b.pt`, install it at `baselines/3b/final_
 
 ## Instructor publication checks
 
-- Decide visibility and licensing before publication; this package does not invent a license grant.
+- Preserve existing source attributions and notices when preparing another release.
 - Include the frozen validation/tokenizer files in Git and retain their hash manifest.
 - Upload the unchanged full checkpoints with exactly the asset names above.
 - Keep generated training data and experiment outputs out of the repository and release.
 - From a clean source checkout, verify `--checkpoints none`, download each asset separately, and verify the corresponding selection. Check the actual public or authenticated access path chosen for students.
-- Announce the repository, release tag, access requirements, and compute allocation. Update the publication-status paragraph after the release is accessible.
+- Announce the repository, release tag, access requirements, and compute allocation.

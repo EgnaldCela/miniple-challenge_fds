@@ -2,7 +2,7 @@
 
 The source repository contains editable pretraining code defaulting to a fresh 3B run, historical curves and benchmark outputs, and a frozen validation/tokenizer reference. The two full historical checkpoints are distributed separately as optional GitHub Release assets. Training data is not distributed: students reconstruct it using the supplied preparation code. SFT, Italian adaptation, and the proposed architecture changes remain student tasks.
 
-The configured target is `spindro/miniple-challenge`, release `v1.0`. The package is prepared locally; repository visibility and publication are still pending. See [distribution](DISTRIBUTION.md) for asset names, selected downloads, and access instructions. No license has been selected or granted by this preparation; settle the intended licensing and applicable third-party notices before public publication.
+The source repository is public at [spindro/miniple-challenge](https://github.com/spindro/miniple-challenge), with checkpoint assets in [release v1.0](https://github.com/spindro/miniple-challenge/releases/tag/v1.0). See [distribution](DISTRIBUTION.md) for asset names and selected downloads. This packaging does not assign a new overall license; existing source attributions and provenance are retained.
 
 ## Defaults chosen for this assignment
 

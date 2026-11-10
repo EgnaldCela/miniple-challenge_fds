@@ -4,7 +4,7 @@ All commands below run from the repository root, the directory containing `train
 
 ## 1. Get the source and inspect it before allocating GPU time
 
-See [distribution and downloads](DISTRIBUTION.md) for the configured GitHub repository, release, publication status, and access instructions. The repository includes the frozen validation file and tokenizer; it does not include the pretrained checkpoint files or training corpus.
+See [distribution and downloads](DISTRIBUTION.md) for the public GitHub repository, release, and download instructions. The repository includes the frozen validation file and tokenizer; it does not include the pretrained checkpoint files or training corpus.
 
 ```bash
 python3 scripts/check_starter.py
@@ -47,7 +47,7 @@ python -m unittest discover -s tests -v
 
 The artifact verifier **always** checks the frozen validation/tokenizer reference. It checks only the checkpoint selection requested with `--checkpoints none|3b|50b|all`; the default is `none`. Missing unselected checkpoints are expected. These checks do not require training data or use a GPU. The unit tests exercise frozen loss evaluation on a tiny CPU model, including batch-size invariance and rejection of modified data. They do not run the full pretrained model.
 
-For 3B reference evaluation, once the public release is available:
+For 3B reference evaluation:
 
 ```bash
 python3 scripts/download_checkpoints.py --checkpoint 3b

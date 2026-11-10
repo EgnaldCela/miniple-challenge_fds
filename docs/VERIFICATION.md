@@ -31,7 +31,7 @@ The small Python tests and artifact checks were run with the existing local Pyth
 - The existing 3B and 50B checkpoints passed the downloader's verification without network access. Both checkpoints and all frozen validation assets retain their original recorded hashes.
 - `source_manifest.json` records byte counts and SHA256 values for the versioned files, excluding itself. Historical manifests and archives remain unchanged.
 
-The downloader uses public GitHub Release URLs from `distribution.json`; private-release access is documented separately. Repository publication and live release downloads are pending. No training or GPU benchmark was run for this packaging update.
+The downloader uses public GitHub Release URLs from `distribution.json`; private-release access is documented separately. These local packaging checks preceded publication and did not test live release downloads. No training or GPU benchmark was run for this packaging update.
 
 ## Limits
 
