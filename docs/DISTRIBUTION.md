@@ -1,6 +1,6 @@
 # Source repository and optional model downloads
 
-The public source repository is [spindro/miniple-challenge](https://github.com/spindro/miniple-challenge). Use [source release v1.0.1](https://github.com/spindro/miniple-challenge/releases/tag/v1.0.1), which fixes fresh-install data preparation. The unchanged checkpoint assets remain in [GitHub Release v1.0](https://github.com/spindro/miniple-challenge/releases/tag/v1.0). Downloads require no GitHub account or invitation.
+The public source repository is [spindro/miniple-challenge](https://github.com/spindro/miniple-challenge). Download the assignment from [source release v1.0.2](https://github.com/spindro/miniple-challenge/releases/tag/v1.0.2). Optional checkpoint assets are hosted in [GitHub Release v1.0](https://github.com/spindro/miniple-challenge/releases/tag/v1.0). Downloads require no GitHub account or invitation.
 
 ## What comes from Git
 
@@ -11,7 +11,7 @@ It excludes full model checkpoints, generated training data, and student experim
 Clone the course release and verify the included reference files:
 
 ```bash
-git clone --branch v1.0.1 https://github.com/spindro/miniple-challenge.git
+git clone --branch v1.0.2 https://github.com/spindro/miniple-challenge.git
 cd miniple-challenge
 python3 scripts/check_starter.py
 python3 scripts/verify_artifacts.py --checkpoints none
@@ -63,7 +63,7 @@ The downloader requires `--checkpoint`; it does not implicitly select both model
 }
 ```
 
-The downloader reads these checkpoint-release defaults; source v1.0.1 intentionally still downloads the original v1.0 weights. If the instructor provides another location, explicitly override it:
+The downloader uses this checkpoint release automatically; students do not need to change `distribution.json`. If the instructor provides another location, explicitly override it:
 
 ```bash
 python3 scripts/download_checkpoints.py --checkpoint 50b \

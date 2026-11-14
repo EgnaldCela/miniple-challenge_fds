@@ -8,7 +8,7 @@ Build and test an improvement to a **146,496,016-parameter language model** on *
 
 Get the source from the public [spindro/miniple-challenge repository](https://github.com/spindro/miniple-challenge) and the optional checkpoints from [release v1.0](https://github.com/spindro/miniple-challenge/releases/tag/v1.0). The source checkout includes code, documents, historical results, and the **frozen validation file and tokenizer**. The two full training checkpoints are separate release assets. **Scratch training needs neither checkpoint.** Training data is reconstructed locally and is not distributed.
 
-Use **source release v1.0.1** for the data-preparation fix, and reinstall its requirements (`datasets==5.0.1`). Both standalone preparation and the launcher now enforce the frozen validation checks. See [setup and recovery instructions](docs/SETUP.md#4-reconstruct-training-data) if an older checkout reported a validation SHA256 mismatch.
+Start with **source release v1.0.2** and follow [the installation guide](docs/SETUP.md): create the environment, verify the bundled references, prepare the training data, and launch your first experiment. The supplied requirements include the verified data-preparation dependency, `datasets==5.0.1`.
 
 Follow [the download and distribution guide](docs/DISTRIBUTION.md). No GitHub account or invitation is required to download the public assignment. Download only what your experiment uses:
 
@@ -49,16 +49,27 @@ The [classroom presentation](presentation/README.md) includes an editable PowerP
 
 ## First commands
 
-From this folder, on the allocated Linux machine:
+On the allocated Linux machine, clone the assignment and prepare the environment and data:
 
 ```bash
+git clone --branch v1.0.2 https://github.com/spindro/miniple-challenge.git
+cd miniple-challenge
 python3 scripts/check_starter.py
 python3 scripts/verify_artifacts.py --checkpoints none
 bash scripts/install.sh
+source .venv/bin/activate
+python -m unittest discover -s tests -v
+python -u prepare_data.py --out-dir data/ultrafineweb_3b
+python train.py --data-dir data/ultrafineweb_3b --validate-data-only
+```
+
+After preparation completes, start the baseline on your allocated GPU:
+
+```bash
 GPU_ID=0 OUT_DIR=runs/my_baseline_3b bash scripts/train.sh
 ```
 
-The training command first downloads and prepares the training corpus when it is missing, then starts the roughly 11-hour historical workload on a 3090. It is not a smoke test. Follow the course GPU allocation. **Training data is not included:** students reconstruct it using `prepare_data.py`. See [setup](docs/SETUP.md) to prepare it separately without starting training. Run an unchanged control on the rebuilt corpus before attributing improvements to architecture: the historical run used different training slices.
+Preparation uses CPU, network, and disk; it can take substantial time before token progress appears. The training command starts the roughly 11-hour historical workload on a 3090. Follow the course GPU allocation and [setup guide](docs/SETUP.md). Run an unchanged control on your prepared corpus before attributing improvements to architecture: the historical run used different training slices.
 
 ## Supplied reference results
 

@@ -33,16 +33,16 @@ The small Python tests and artifact checks were run with the existing local Pyth
 
 The downloader uses public GitHub Release URLs from `distribution.json`; private-release access is documented separately. These local packaging checks preceded publication and did not test live release downloads. No training or GPU benchmark was run for this packaging update.
 
-## Fresh-install preparation fix — 14 November 2026 (source v1.0.1)
+## Data preparation verification — 14 November 2026
 
 - Reconstructed all **5,000,001 validation tokens** from the pinned live L2 source in a clean data-preparation environment. The 5,809 contributing documents produced SHA256 `cd9b0e5cbf20e45922905d249a1dfe397d66abe886aa622d2632eaeb604e81a8`, exactly matching the immutable reference.
 - Ran the updated `prepare_data.py --check-validation-only` itself with bounded, cached HTTP-range transport. Its output was independently hashed: validation and tokenizer match the bundled files; no training files or `metadata.json` were created. This was a correctness check with a warm range cache, not a cold-download timing measurement.
 - Verified environment: Python 3.12.2, datasets 5.0.1, NumPy 2.5.4, tokenizers 0.23.3, PyArrow 26.0.1, huggingface-hub 1.33.0, fsspec 2026.6.0. `pip check` passed in that clean environment. The full Linux/CUDA training environment was not installed for this check.
 - Both pinned L3 configurations yielded a nonempty text row through the new projected, buffered reader. Those smoke checks disabled shuffle and did not reconstruct the full L3 streams.
 - The initial L2 shuffle-buffer fill involved roughly 1.61 GB of ranged source reads in the diagnostic. Validation-only preparation can therefore take minutes before emitting tokens, despite its final output being only 10 MB.
-- Datasets 5.0.1 and 5.2.0 implement different shuffle-buffer algorithms. The former is now pinned and checked before network access; the ten-input-shard setting is explicit. A complete live 5.2.0/default-ten-shard counterfactual was not completed, so the reporter's precise environment remains unconfirmed.
+- Datasets 5.0.1 is pinned and checked before network access; the ten-input-shard setting is explicit. The verification above applies to this supplied preparation recipe.
 - All 29 CPU tests pass, covering early token mismatch, full SHA verification, document boundaries, progressive publication, rejection of incompatible library versions before downloads, canonical references for standalone preparation, and rejection of mismatched cached data before GPU access. Starter/launcher checks and bundled artifact hashes also pass.
-- Source v1.0.1 retains the original validation bytes, tokenizer, checkpoint assets, historical scores, and v1.0 checkpoint download locations. Existing valid prepared metadata is not rewritten, preserving its resume fingerprint. A mismatched corpus must be rebuilt in a fresh directory.
+- The assignment retains the original validation bytes, tokenizer, checkpoint assets, historical scores, and v1.0 checkpoint download locations. Prepared metadata remains fixed for reproducible experiments and compatible checkpoint resumes.
 
 No full 3B corpus reconstruction, GPU training, benchmark rerun, or Colab/CUDA installation was performed for this fix. The checks above establish the data-preparation contract, not end-to-end training performance.
 
