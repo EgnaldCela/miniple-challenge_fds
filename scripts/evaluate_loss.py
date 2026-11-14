@@ -12,11 +12,10 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from model import MiniPLE, MiniPLEConfig
 from train import MemmapTokenLoader, choose_device, choose_dtype, evaluate, load_metadata, sha256_file
+from validation_reference import TOKENIZER_SHA256, VALIDATION_SHA256
 
 SEQUENCES = 128
 SEQ_LEN = 2048
-TOKENIZER_SHA256 = "78025606dd6a505cd74f4b187866bf5540ee83239131aa2f1ddefdfd2e104272"
-VALIDATION_SHA256 = "cd9b0e5cbf20e45922905d249a1dfe397d66abe886aa622d2632eaeb604e81a8"
 
 
 def validation_files(data_dir: Path) -> tuple[Path, str]:

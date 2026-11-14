@@ -1,7 +1,8 @@
 torch>=2.5
 numpy>=1.26
 tokenizers>=0.20
-datasets>=3.0
+# Frozen validation depends on this version's streaming shuffle algorithm.
+datasets==5.0.1
 tqdm>=4.66
 huggingface_hub>=0.24
 matplotlib>=3.8

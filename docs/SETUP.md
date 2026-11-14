@@ -36,6 +36,8 @@ FLASH_ATTENTION_FORCE_BUILD=TRUE MAX_JOBS=4 NVCC_THREADS=2 \
 
 For CPU-only development, use a compatible PyTorch installation and `python -m pip install -r requirements.txt`. CPU fallback supports small correctness checks; the production launcher still requires CUDA. Existing custom MiniPLE weights are not directly loadable by Transformers or TRL without an adapter/conversion.
 
+Data preparation requires **`datasets==5.0.1`**, pinned in `requirements.txt` and checked before any dataset download. The dataset revision and seed alone do not fix the stream: newer library versions changed the shuffle algorithm. Use the same Python environment for installation, preparation, and the launcher. After upgrading an existing checkout, rerun `python -m pip install -r requirements.txt`; restart a Colab runtime if it already imported the previous version.
+
 ## 3. Select and verify reference assets
 
 For scratch training, verify the bundled validation/tokenizer without downloading model weights:
@@ -76,7 +78,46 @@ bash scripts/debug.sh
 
 Preparation uses CPU, disk, and network access; it does not train or require a GPU. It streams the pinned L2/L3 source revisions, tokenizes documents, writes document-disjoint packed files and metadata, and checks that regenerated validation exactly matches the frozen reference. It can take substantial time. Preserve the resulting files and metadata for both control and candidate. The debug command validates prepared-file sizes, configuration, and CUDA availability.
 
-The default `scripts/train.sh` also performs this preparation automatically if the selected `DATA_DIR` has no metadata, using the bundled tokenizer/reference when present. Unlike the separate preparation command, it proceeds to training afterward.
+Both reference paths are now defaults, so a bare `python prepare_data.py --out-dir ...` performs the same validation checks. Missing or modified references fail before dataset downloads. Preparation prints package versions and shuffle settings, shows progress for each output file, and stops at the first differing validation document. It reads only the configured text column with buffered Parquet I/O. Initial streaming still needs to fetch large source chunks and fill the 20,000-document shuffle buffer before token progress appears; this can take minutes and transfer much more than the 10 MB validation output.
+
+To test data access and validation reconstruction without preparing the training corpus:
+
+```bash
+python -u prepare_data.py --out-dir data/validation_check --check-validation-only
+```
+
+This reconstructs all 5,000,001 validation tokens and checks the full SHA256. It uses CPU/network and can take minutes, but never loads L3 data or starts training. It creates no training metadata; use a separate directory for full preparation.
+
+The default `scripts/train.sh` also performs full preparation automatically if the selected `DATA_DIR` has no metadata. It requires the bundled references and validates prepared data on CPU before querying or waiting for a GPU. Unlike the separate preparation command, it proceeds to training afterward. It uses `.venv/bin/python` unless `PYTHON` is set; activate that environment for standalone commands too.
+
+### If an older checkout reported a validation SHA256 mismatch
+
+Update the source to **v1.0.1** and reinstall its requirements in the preparation environment:
+
+```bash
+git fetch origin --tags
+git switch --detach v1.0.1
+python -m pip install -r requirements.txt
+```
+
+Preserve any local work before switching versions; Git will refuse a switch that would overwrite conflicting edits. Version 1.0 allowed `datasets>=3.0`; [5.0.1](https://github.com/huggingface/datasets/blob/5.0.1/src/datasets/iterable_dataset.py) and [5.2.0](https://github.com/huggingface/datasets/blob/5.2.0/src/datasets/iterable_dataset.py) use different buffer-shuffling algorithms. The complete frozen validation was reproduced with 5.0.1; see [verification](VERIFICATION.md).
+
+Do not remove the check, change the recorded hash, or copy the frozen validation over a different generated stream: that can allow held-out documents into training. A standalone preparation that succeeded without the reference flag may still have produced the wrong validation set.
+
+Check existing prepared data without using a GPU:
+
+```bash
+python train.py --data-dir data/ultrafineweb_3b --validate-data-only
+```
+
+If it fails, preserve the old directory for diagnosis and reconstruct into a fresh one:
+
+```bash
+python -u prepare_data.py --out-dir data/ultrafineweb_3b_fixed
+DATA_DIR=data/ultrafineweb_3b_fixed OUT_DIR=runs/baseline_3b_fixed bash scripts/train.sh
+```
+
+The second command starts a full GPU run; use it only with an allocated GPU and budget. Do not resume an old checkpoint against rebuilt data. If preparation still fails, share the first error, the printed package versions/settings, and the exact command; no GPU is needed to reproduce it.
 
 The fresh training corpus is **not byte-identical** to the historical corpus because the historical run reused specific older slices. Run an unchanged baseline on your reconstructed corpus before attributing gains to architecture or optimization. Historical plots/scores remain useful references; candidate and control must use the same reconstructed bytes. The frozen validation protocol stays unchanged. Use a new `--out-dir` for a changed preparation; existing metadata is protected against overwrite.
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from importlib.metadata import PackageNotFoundError, version
 import json
 import math
 import os
@@ -13,6 +14,7 @@ from huggingface_hub import HfApi
 from tokenizers import Tokenizer
 from tqdm import tqdm
 from data_progress import publish_tokens, read_progress
+from validation_reference import verify_tokenizer_reference, verify_validation_reference
 
 from tokenizer_utils import (
     BOS_TOKEN,
@@ -21,6 +23,10 @@ from tokenizer_utils import (
     NANOCHAT_TOKENIZER_REVISION,
     load_fixed_nanochat_tokenizer,
 )
+
+DATASETS_VERSION = "5.0.1"
+PARQUET_BATCH_SIZE = 2_000
+PARQUET_SCAN_OPTIONS = {"pre_buffer": False, "use_buffered_stream": True, "buffer_size": 65_536}
 
 
 def parse_args():
@@ -41,10 +47,9 @@ def parse_args():
     p.add_argument(
         "--tokenizer-json",
         type=Path,
-        default=None,
+        default=Path(__file__).resolve().parent / "baselines/validation/tokenizer.json",
         help=(
-            "Optional local nanochat tokenizer.json. If omitted, the pinned "
-            "32,768-token ClimbMix nanochat tokenizer is downloaded once."
+            "Frozen course tokenizer.json (defaults to the bundled reference)."
         ),
     )
     p.add_argument("--tokenizer-repo", default=NANOCHAT_TOKENIZER_REPO)
@@ -55,7 +60,10 @@ def parse_args():
     p.add_argument("--progressive", action="store_true",
                    help="Publish durable token counts so training can start during preparation")
     p.add_argument("--validation-reference", type=Path,
-                   help="Require the generated validation stream to match this existing token file")
+                   default=Path(__file__).resolve().parent / "baselines/validation/val_l2.bin",
+                   help="Frozen course validation; always checked, including standalone preparation")
+    p.add_argument("--check-validation-only", action="store_true",
+                   help="Reconstruct and check only the 5M-token validation stream; no training corpus")
 
     # Public dataset names/configs as of Sep 2026.
     p.add_argument("--l2-dataset", default="openbmb/Ultra-FineWeb")
@@ -83,7 +91,20 @@ def parse_args():
 def _shuffle(ds, seed: int, buffer_size: int):
     if buffer_size <= 0:
         return ds
-    return ds.shuffle(seed=seed, buffer_size=buffer_size)
+    return ds.shuffle(seed=seed, buffer_size=buffer_size, max_buffer_input_shards=10)
+
+
+def _reader_kwargs(text_field: str):
+    from datasets import Features, Value
+    from pyarrow.dataset import ParquetFragmentScanOptions
+
+    # Read text in bounded batches; fetching unused columns evicts the HTTP cache.
+    return {
+        "columns": [text_field],
+        "features": Features({text_field: Value("string")}),
+        "batch_size": PARQUET_BATCH_SIZE,
+        "fragment_scan_options": ParquetFragmentScanOptions(**PARQUET_SCAN_OPTIONS),
+    }
 
 
 def l2_stream(args, seed: int, revision: str):
@@ -94,6 +115,7 @@ def l2_stream(args, seed: int, revision: str):
         split=args.l2_split,
         revision=revision,
         streaming=True,
+        **_reader_kwargs(args.l2_text_field),
     )
     return _shuffle(ds, seed, args.shuffle_buffer)
 
@@ -107,6 +129,7 @@ def l3_stream(args, config: str, seed: int, revision: str):
         split="train",
         revision=revision,
         streaming=True,
+        **_reader_kwargs(args.l3_text_field),
     )
     return _shuffle(ds, seed, args.shuffle_buffer)
 
@@ -156,6 +179,7 @@ def pack_stream_across_targets(
     description: str,
     progressive: bool = False,
     validation_sha256: str | None = None,
+    validation_reference: Path | None = None,
 ) -> dict[str, int]:
     """
     Consume one stream once and fill multiple token files sequentially.
@@ -168,7 +192,10 @@ def pack_stream_across_targets(
         raise RuntimeError(f"Tokenizer has no required {BOS_TOKEN} token")
 
     total_target = sum(n for _, n in targets)
-    pbar = tqdm(total=total_target, unit="tok", unit_scale=True, desc=description)
+    reference = (np.fromfile(validation_reference, dtype=np.uint16)
+                 if validation_reference is not None else None)
+    pbar = tqdm(total=targets[0][1], unit="tok", unit_scale=True,
+                desc=f"{description}: {targets[0][0].name}")
 
     files = [open(path, "wb") for path, _ in targets]
     written = [0 for _ in targets]
@@ -180,8 +207,13 @@ def pack_stream_across_targets(
         os.fsync(files[index].fileno())
         path, target = targets[index]
         if complete and path.name == "val_l2.bin" and validation_sha256:
-            if sha256_file(path) != validation_sha256:
-                raise ValueError("Generated validation differs from --validation-reference; training must not start")
+            actual = sha256_file(path)
+            if actual != validation_sha256:
+                raise ValueError(
+                    f"Generated validation SHA256 mismatch: expected {validation_sha256}, got {actual}; "
+                    "training must not start. Use a fresh output directory after correcting preparation."
+                )
+            print(f"\nPASS: frozen validation SHA256 {actual}", flush=True)
         if progressive:
             publish_tokens(path, written[index], target, complete=complete)
         published[index] = written[index]
@@ -203,7 +235,24 @@ def pack_stream_across_targets(
                     current += 1
                     continue
                 n = min(remaining, len(ids))
-                np.asarray(ids[:n], dtype=np.uint16).tofile(files[current])
+                chunk = np.asarray(ids[:n], dtype=np.uint16)
+                if reference is not None and targets[current][0].name == "val_l2.bin":
+                    start = written[current]
+                    expected = reference[start:start + n]
+                    if len(expected) != n:
+                        raise ValueError("Validation reference token count differs from the preparation target")
+                    different = np.flatnonzero(chunk != expected)
+                    if different.size:
+                        offset = int(different[0])
+                        raise ValueError(
+                            f"Generated validation differs from --validation-reference at token "
+                            f"{start + offset:,}: expected {int(expected[offset])}, got {int(chunk[offset])}. "
+                            "Stopped at the first differing document, before preparing training data. "
+                            "Check the printed package versions, seed and shuffle settings; "
+                            "use a fresh output directory after correcting preparation. "
+                            "Do not replace the frozen validation or disable this check."
+                        )
+                chunk.tofile(files[current])
                 written[current] += n
                 pbar.update(n)
                 if written[current] >= targets[current][1]:
@@ -218,6 +267,9 @@ def pack_stream_across_targets(
                         str(targets[i][0].name): written[i]
                         for i in range(len(targets))
                     }
+                if written[current] == 0:
+                    pbar.reset(total=targets[current][1])
+                    pbar.set_description(f"{description}: {targets[current][0].name}")
     finally:
         pbar.close()
         for f in files:
@@ -277,6 +329,26 @@ def main():
     if args.mix_start_tokens >= args.stage1_tokens:
         raise ValueError("--mix-start-tokens must be before the learning-rate cooldown")
 
+    # Reject missing/corrupt references locally, before any Hub calls or streaming.
+    validation_sha256 = verify_validation_reference(args.validation_reference, args.val_tokens + 1)
+    verify_tokenizer_reference(args.tokenizer_json)
+    packages = {}
+    for name in ("datasets", "numpy", "tokenizers", "huggingface_hub", "pyarrow", "fsspec"):
+        try:
+            packages[name] = version(name)
+        except PackageNotFoundError:
+            packages[name] = "not installed"
+    print("Preparation packages: " + json.dumps(packages, sort_keys=True), flush=True)
+    if packages["datasets"] != DATASETS_VERSION:
+        raise RuntimeError(
+            f"Preparation requires datasets=={DATASETS_VERSION}; found {packages['datasets']}. "
+            "Run python -m pip install -r requirements.txt in the same environment used for preparation. "
+            "Streaming shuffle algorithms differ between versions; use the pinned preparation version."
+        )
+    print(f"Seed: {args.seed}; L2 shuffle seed: {args.seed + 1}; "
+          f"buffer: {args.shuffle_buffer:,}; input shards: 10; "
+          f"encode batch: {args.encode_batch_size}", flush=True)
+
     tok, tokenizer_path = load_fixed_nanochat_tokenizer(
         args.out_dir,
         repo_id=args.tokenizer_repo,
@@ -292,8 +364,19 @@ def main():
     # Resolve moving Hub branches to immutable SHAs before streaming. The resolved
     # revisions are written to metadata.json so the exact source snapshot is known.
     l2_revision = resolve_dataset_revision(args.l2_dataset, args.l2_revision)
-    l3_revision = resolve_dataset_revision(args.l3_dataset, args.l3_revision)
     print(f"L2 revision: {l2_revision}")
+    print("Preparing validation first; initial streaming fills the shuffle buffer before tokens appear.",
+          flush=True)
+    if args.check_validation_only:
+        pack_stream_across_targets(
+            l2_stream(args, args.seed + 1, l2_revision), tok, args.l2_text_field,
+            [(args.out_dir / "val_l2.bin", args.val_tokens + 1)], args.encode_batch_size,
+            "Ultra-FineWeb L2", validation_sha256=validation_sha256,
+            validation_reference=args.validation_reference,
+        )
+        print("Validation-only check complete. No training corpus or metadata.json was created.", flush=True)
+        return
+    l3_revision = resolve_dataset_revision(args.l3_dataset, args.l3_revision)
     print(f"L3 revision: {l3_revision}")
 
     # Budget only the active mixture, with margin for update/cycle rounding.
@@ -308,12 +391,6 @@ def main():
     ]
     targets = l2_targets + [(args.out_dir / name, l3_each + 1)
                            for name in ("decay_l3_qa.bin", "decay_l3_style.bin")]
-    validation_sha256 = None
-    if args.validation_reference is not None:
-        if args.validation_reference.stat().st_size != (args.val_tokens + 1) * 2:
-            raise ValueError("--validation-reference has a different token count")
-        validation_sha256 = sha256_file(args.validation_reference)
-
     metadata = {
         "vocab_size": tok.get_vocab_size(),
         "dtype": "uint16",
@@ -371,6 +448,17 @@ def main():
         },
         "files": {path.name: count for path, count in targets},
         "seed": args.seed,
+        "preparation": {
+            "packages": packages,
+            "shuffle_buffer": args.shuffle_buffer,
+            "max_buffer_input_shards": 10,
+            "encode_batch_size": args.encode_batch_size,
+            "parquet_reader": {
+                "batch_size": PARQUET_BATCH_SIZE,
+                "columns": "configured text field only",
+                **PARQUET_SCAN_OPTIONS,
+            },
+        },
     }
     if validation_sha256:
         metadata["validation_reference_sha256"] = validation_sha256
@@ -389,6 +477,7 @@ def main():
             l2_stream(args, args.seed + 1, l2_revision), tok, args.l2_text_field,
             l2_targets, args.encode_batch_size, "Ultra-FineWeb L2",
             progressive=args.progressive, validation_sha256=validation_sha256,
+            validation_reference=args.validation_reference,
         )
         for config, name, label, offset in (
             (args.l3_qa_config, "decay_l3_qa.bin", "QA", 2),

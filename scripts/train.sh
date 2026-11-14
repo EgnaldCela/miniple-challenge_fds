@@ -13,7 +13,6 @@ warmup_tokens="${WARMUP_TOKENS:-10000000}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}"
 export TORCHINDUCTOR_COMPILE_THREADS="${TORCHINDUCTOR_COMPILE_THREADS:-4}"
 export PYTHONUNBUFFERED=1
-export CUDA_VISIBLE_DEVICES="$(nvidia-smi -i "$gpu_id" --query-gpu=uuid --format=csv,noheader)"
 
 mkdir -p "$out_dir"
 exec 9>"$out_dir/job.lock"
@@ -37,20 +36,23 @@ if (( ! resume )) && [[ -e "$out_dir/metrics.jsonl" || -e "$out_dir/latest.pt" ]
 fi
 trap 'code=$?; if (( code != 0 )); then printf "failed (exit %s)\n" "$code" >"$out_dir/status"; fi' EXIT
 
+for reference in baselines/validation/val_l2.bin baselines/validation/tokenizer.json; do
+  [[ -f "$reference" ]] || { echo "Missing frozen course reference: $reference" >&2; exit 1; }
+done
 if [[ ! -f "$data_dir/metadata.json" ]]; then
   printf '%s\n' preparing_data >"$out_dir/status"
   prepare_args=(--out-dir "$data_dir"
     --stage1-tokens "$stage1_tokens" --decay-tokens "$decay_tokens"
-    --mix-start-tokens "$mix_start_tokens" --val-tokens 5000000)
-  if [[ -f baselines/validation/val_l2.bin ]]; then
-    prepare_args+=(--validation-reference baselines/validation/val_l2.bin)
-  fi
-  if [[ -f baselines/validation/tokenizer.json ]]; then
-    prepare_args+=(--tokenizer-json baselines/validation/tokenizer.json)
-  fi
+    --mix-start-tokens "$mix_start_tokens" --val-tokens 5000000
+    --validation-reference baselines/validation/val_l2.bin
+    --tokenizer-json baselines/validation/tokenizer.json)
   "$python_bin" -u prepare_data.py "${prepare_args[@]}" \
     2>&1 | tee -a "$out_dir/prepare.log"
 fi
+printf '%s\n' validating_data >"$out_dir/status"
+CUDA_VISIBLE_DEVICES="" "$python_bin" -u train.py --data-dir "$data_dir" --validate-data-only \
+  2>&1 | tee -a "$out_dir/prepare.log"
+export CUDA_VISIBLE_DEVICES="$(nvidia-smi -i "$gpu_id" --query-gpu=uuid --format=csv,noheader)"
 printf '%s\n' waiting_for_gpu >"$out_dir/status"
 while [[ -n "$(nvidia-smi -i "$gpu_id" --query-compute-apps=pid --format=csv,noheader)" ]]; do
   echo "$(date -Is) Waiting for GPU $gpu_id" >>"$out_dir/job.log"

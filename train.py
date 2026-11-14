@@ -20,6 +20,9 @@ from model import MiniPLE, MiniPLEConfig
 from muon import MuonAdamW
 from sampled_softmax import CandidateBuilder, pr360_candidate_count, schedule_transitions
 from data_progress import read_progress, wait_for_tokens
+from validation_reference import (
+    VALIDATION_TOKENS, verify_tokenizer_reference, verify_validation_reference,
+)
 
 
 class MemmapTokenLoader:
@@ -146,6 +149,8 @@ def parse_args():
     )
     p.add_argument("--data-dir", type=Path, required=True)
     p.add_argument("--out-dir", type=Path, default=Path("runs/baseline_3b"))
+    p.add_argument("--validate-data-only", action="store_true",
+                   help="Validate prepared data on CPU and exit without initializing training")
 
     p.add_argument("--stage1-tokens", type=int, default=2_100_000_000)
     p.add_argument("--decay-tokens", type=int, default=900_000_000)
@@ -391,6 +396,7 @@ def validate_prepared_data(data_dir: Path, meta: dict[str, Any]) -> None:
     tok_path = data_dir / tok_name
     if not tok_path.exists():
         raise FileNotFoundError(f"Missing frozen tokenizer file: {tok_path}")
+    verify_tokenizer_reference(tok_path)
     expected_hash = tokenizer_meta.get("sha256")
     if expected_hash:
         actual_hash = sha256_file(tok_path)
@@ -400,6 +406,10 @@ def validate_prepared_data(data_dir: Path, meta: dict[str, Any]) -> None:
             )
 
     files = meta.get("files", {})
+    if files.get("val_l2.bin") != VALIDATION_TOKENS:
+        raise ValueError(
+            f"Prepared data must declare the frozen validation stream with {VALIDATION_TOKENS:,} tokens"
+        )
     for name, expected_tokens in files.items():
         path = data_dir / name
         if meta.get("progressive_preparation") and name == "val_l2.bin":
@@ -420,6 +430,7 @@ def validate_prepared_data(data_dir: Path, meta: dict[str, Any]) -> None:
                 f"Token count mismatch for {path.name}: metadata={int(expected_tokens):,}, "
                 f"file={actual_tokens:,}"
             )
+    verify_validation_reference(data_dir / "val_l2.bin", expected_tokens=VALIDATION_TOKENS)
 
 
 def all_loader_states(stage1, decay_l3, decay_l2, val, sampled_builder=None):
@@ -458,6 +469,11 @@ def log_metrics(out_dir: Path, event: str, **values) -> None:
 
 def main():
     args = parse_args()
+    meta = load_metadata(args.data_dir)
+    validate_prepared_data(args.data_dir, meta)
+    if args.validate_data_only:
+        print(f"Prepared data and frozen validation/tokenizer verified: {args.data_dir}")
+        return
     for name in ("micro_batch", "grad_accum", "seq_len", "eval_sequences",
                  "log_interval", "ce_chunk_size"):
         if getattr(args, name) <= 0:
@@ -479,8 +495,6 @@ def main():
     if args.seq_len > MiniPLEConfig.max_seq_len:
         raise ValueError(f"MiniPLE PLE64 supports context <= {MiniPLEConfig.max_seq_len}")
 
-    meta = load_metadata(args.data_dir)
-    validate_prepared_data(args.data_dir, meta)
     data_fingerprint = hashlib.sha256(
         json.dumps(meta, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()

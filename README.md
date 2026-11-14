@@ -8,6 +8,8 @@ Build and test an improvement to a **146,496,016-parameter language model** on *
 
 Get the source from the public [spindro/miniple-challenge repository](https://github.com/spindro/miniple-challenge) and the optional checkpoints from [release v1.0](https://github.com/spindro/miniple-challenge/releases/tag/v1.0). The source checkout includes code, documents, historical results, and the **frozen validation file and tokenizer**. The two full training checkpoints are separate release assets. **Scratch training needs neither checkpoint.** Training data is reconstructed locally and is not distributed.
 
+Use **source release v1.0.1** for the data-preparation fix, and reinstall its requirements (`datasets==5.0.1`). Both standalone preparation and the launcher now enforce the frozen validation checks. See [setup and recovery instructions](docs/SETUP.md#4-reconstruct-training-data) if an older checkout reported a validation SHA256 mismatch.
+
 Follow [the download and distribution guide](docs/DISTRIBUTION.md). No GitHub account or invitation is required to download the public assignment. Download only what your experiment uses:
 
 ```bash
