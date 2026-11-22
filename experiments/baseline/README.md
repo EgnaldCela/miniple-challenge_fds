@@ -9,7 +9,6 @@ control for Track A.
 | Property | Value |
 |---|---|
 | Model parameters | 146,496,016 |
-| GPU | NVIDIA A100 (CINECA Leonardo) |
 | Training duration | 03:58:59 |
 | Training steps | 18,310 |
 | Training tokens | 2,999,910,400 |
