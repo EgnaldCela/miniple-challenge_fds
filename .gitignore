@@ -14,3 +14,8 @@ __pycache__/
 *.part
 ~$*
 # Supplied small baseline figures and JSON records remain versioned.
+
+# Local experiment execution files
+/experiments/**/status
+/experiments/**/*.sbatch
+/experiments/**/*.log
